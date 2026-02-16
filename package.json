@@ -1,0 +1,46 @@
+{
+  "name": "@ericnunes/frame-agent-core",
+  "version": "0.0.1",
+  "description": "Harness headless (core) para criar e executar agentes usando frame-agent-sdk: rules, skills, MCP, tool policies e runtime APIs.",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": "./dist/index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ericnunes30/frame-agent-core.git"
+  },
+  "bugs": {
+    "url": "https://github.com/ericnunes30/frame-agent-core/issues"
+  },
+  "homepage": "https://github.com/ericnunes30/frame-agent-core#readme",
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "npm run clean && tsc -p tsconfig.json",
+    "clean": "node -e \"require('fs').rmSync('dist', { recursive: true, force: true })\"",
+    "prepare": "npm run build"
+  },
+  "dependencies": {
+    "@ericnunes/frame-agent-sdk": "^0.0.7",
+    "@typescript-eslint/typescript-estree": "^8.48.0",
+    "dotenv": "^17.2.3",
+    "openai": "^6.10.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24.7.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.9.2"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "license": "SEE LICENSE IN LICENSE"
+}

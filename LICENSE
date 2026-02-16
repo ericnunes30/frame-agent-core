@@ -1,0 +1,138 @@
+PROPRIETARY SOFTWARE LICENSE
+
+Copyright (c) 2025 Eric Nunes. All rights reserved.
+
+================================================================================
+FRAME AGENT CORE - LICENCA DE USO RESTRITO
+================================================================================
+
+IMPORTANTE: LEIA ATENTAMENTE ANTES DE USAR ESTE SOFTWARE
+
+Este software e a documentacao associada (coletivamente, o "Software") sao
+propriedade exclusiva de Eric Nunes ("Proprietario") e estao
+protegidos por leis de direitos autorais e tratados internacionais.
+
+================================================================================
+1. CONCESSAO DE LICENCA
+================================================================================
+
+Sujeito aos termos e condicoes desta Licenca, o Proprietario concede a voce
+uma licenca limitada, nao exclusiva, intransferivel e revogavel para:
+
+  a) USO INTERNO: Usar o Software internamente dentro de sua organizacao para
+     fins de desenvolvimento, teste e operacao de sistemas internos.
+
+  b) USO PESSOAL: Usar o Software para fins pessoais, educacionais e de
+     pesquisa nao-comercial.
+
+  c) MODIFICACAO: Modificar o Software para uso interno ou pessoal, desde que
+     as modificacoes permanecam sob os termos desta Licenca.
+
+================================================================================
+2. RESTRICOES
+================================================================================
+
+Voce NAO PODE, sob nenhuma circunstancia:
+
+  a) COMERCIALIZACAO: Vender, licenciar, sublicenciar, alugar, arrendar ou
+     de qualquer forma comercializar o Software ou qualquer produto derivado
+     dele.
+
+  b) REDISTRIBUICAO: Distribuir, publicar, transferir ou disponibilizar o
+     Software ou qualquer parte dele a terceiros, exceto conforme expressamente
+     permitido nesta Licenca.
+
+  c) PRODUTOS COMERCIAIS: Usar o Software como base para criar, desenvolver ou
+     distribuir produtos ou servicos comerciais.
+
+  d) REMOCAO DE AVISOS: Remover, alterar ou obscurecer quaisquer avisos de
+     direitos autorais, marcas registradas ou outros avisos de propriedade
+     contidos no Software.
+
+  e) ENGENHARIA REVERSA: Fazer engenharia reversa, descompilar ou desmontar
+     o Software, exceto na medida expressamente permitida pela lei aplicavel.
+
+================================================================================
+3. PROPRIEDADE INTELECTUAL
+================================================================================
+
+O Software e licenciado, nao vendido. O Proprietario retem todos os direitos,
+titulos e interesses no Software, incluindo todos os direitos de propriedade
+intelectual. Esta Licenca nao concede a voce nenhum direito sobre marcas
+registradas ou marcas de servico do Proprietario.
+
+================================================================================
+4. ISENCAO DE GARANTIAS
+================================================================================
+
+O SOFTWARE E FORNECIDO "NO ESTADO EM QUE SE ENCONTRA", SEM GARANTIAS DE
+QUALQUER TIPO, EXPRESSAS OU IMPLICITAS, INCLUINDO, MAS NAO SE LIMITANDO A,
+GARANTIAS DE COMERCIALIZACAO, ADEQUACAO A UM PROPOSITO ESPECIFICO E
+NAO VIOLACAO.
+
+O Proprietario nao garante que o Software:
+  - Atendera aos seus requisitos
+  - Operara de forma ininterrupta ou livre de erros
+  - Sera compativel com outros softwares ou hardwares
+  - Sera seguro ou livre de vulnerabilidades
+
+================================================================================
+5. LIMITACAO DE RESPONSABILIDADE
+================================================================================
+
+EM NENHUMA CIRCUNSTANCIA O PROPRIETARIO SERA RESPONSAVEL POR QUAISQUER DANOS
+DIRETOS, INDIRETOS, INCIDENTAIS, ESPECIAIS, EXEMPLARES OU CONSEQUENCIAIS
+(INCLUINDO, MAS NAO SE LIMITANDO A, AQUISICAO DE BENS OU SERVICOS
+SUBSTITUTOS; PERDA DE USO, DADOS OU LUCROS; OU INTERRUPCAO DE NEGOCIOS)
+DECORRENTES DO USO OU INCAPACIDADE DE USAR O SOFTWARE, MESMO QUE O
+PROPRIETARIO TENHA SIDO AVISADO DA POSSIBILIDADE DE TAIS DANOS.
+
+================================================================================
+6. RESCISAO
+================================================================================
+
+Esta Licenca e efetiva ate ser rescindida. Seus direitos sob esta Licenca
+serao automaticamente rescindidos sem aviso do Proprietario se voce nao
+cumprir qualquer termo desta Licenca.
+
+Apos a rescisao, voce deve:
+  - Cessar imediatamente todo uso do Software
+  - Destruir todas as copias do Software em sua posse ou controle
+
+================================================================================
+7. DISPOSICOES GERAIS
+================================================================================
+
+  a) LEI APLICAVEL: Esta Licenca sera regida e interpretada de acordo com as
+     leis do Brasil, sem considerar seus conflitos de disposicoes legais.
+
+  b) INTEGRALIDADE: Esta Licenca constitui o acordo completo entre voce e o
+     Proprietario em relacao ao Software e substitui todos os acordos
+     anteriores ou contemporaneos.
+
+  c) MODIFICACOES: O Proprietario reserva-se o direito de modificar esta
+     Licenca a qualquer momento. O uso continuado do Software apos tais
+     modificacoes constitui sua aceitacao da Licenca modificada.
+
+  d) DIVISIBILIDADE: Se qualquer disposicao desta Licenca for considerada
+     invalida ou inexequivel, as disposicoes restantes permanecerao em pleno
+     vigor e efeito.
+
+================================================================================
+8. CONTATO
+================================================================================
+
+Para questoes sobre esta Licenca ou para solicitar permissoes adicionais,
+entre em contato:
+
+  Eric Nunes
+  GitHub: https://github.com/ericnunes30/frame-agent-core
+
+================================================================================
+
+AO USAR ESTE SOFTWARE, VOCE RECONHECE QUE LEU ESTA LICENCA, COMPREENDEU-A
+E CONCORDA EM ESTAR VINCULADO POR SEUS TERMOS E CONDICOES.
+
+SE VOCE NAO CONCORDAR COM ESTES TERMOS, NAO USE O SOFTWARE.
+
+================================================================================
