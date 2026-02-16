@@ -12,7 +12,7 @@ export interface IProjectRules {
 export const loadProjectRules = {
   /**
    * Carrega o arquivo AGENTS.md do projeto.
-   * Prioridade default: .code/AGENTS.md > AGENTS.md (raiz)
+   * Prioridade default: .agents/AGENTS.md > .code/AGENTS.md > AGENTS.md (raiz)
    */
   load(
     projectRoot: string,
@@ -23,7 +23,9 @@ export const loadProjectRules = {
       ? path.isAbsolute(options.rulesFile)
         ? options.rulesFile
         : path.join(root, options.rulesFile)
-      : path.join(root, '.code', 'AGENTS.md');
+      : path.join(root, '.agents', 'AGENTS.md');
+
+    const legacyPrimaryPath = path.join(root, '.code', 'AGENTS.md');
 
     const fallbackPath = options?.rulesFallbackFile
       ? path.isAbsolute(options.rulesFallbackFile)
@@ -35,6 +37,12 @@ export const loadProjectRules = {
       const content = fs.readFileSync(primaryPath, 'utf-8');
       logger.info(`[loadProjectRules] Carregado rules file: ${primaryPath}`);
       return { content, source: 'code-dir', path: primaryPath };
+    }
+
+    if (!options?.rulesFile && fs.existsSync(legacyPrimaryPath)) {
+      const content = fs.readFileSync(legacyPrimaryPath, 'utf-8');
+      logger.info(`[loadProjectRules] Carregado rules legacy: ${legacyPrimaryPath}`);
+      return { content, source: 'code-dir', path: legacyPrimaryPath };
     }
 
     if (fs.existsSync(fallbackPath)) {

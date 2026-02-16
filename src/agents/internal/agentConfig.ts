@@ -51,7 +51,20 @@ function substituteEnvVarsRecursive<T>(config: T): T {
 
 function loadConfigFile(projectRoot: string, configFile?: string): AgentConfigFile | null {
   const root = resolve(projectRoot);
-  const configPath = configFile ? resolve(configFile) : path.join(root, '.code', 'config.json');
+  const configPathFromArg = configFile
+    ? path.isAbsolute(configFile)
+      ? configFile
+      : path.join(root, configFile)
+    : undefined;
+
+  const defaultPath = (() => {
+    const modern = path.join(root, '.agents', 'config.json');
+    const legacy = path.join(root, '.code', 'config.json');
+    if (fs.existsSync(modern)) return modern;
+    return legacy;
+  })();
+
+  const configPath = configPathFromArg ?? defaultPath;
 
   if (configFileCacheByPath.has(configPath)) return configFileCacheByPath.get(configPath) ?? null;
 

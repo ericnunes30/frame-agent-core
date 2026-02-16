@@ -37,8 +37,18 @@ export function loadUserCodeMcpConfigs(args: {
   layout?: FrameProjectLayout;
 }): McpConfigWithMetadata[] {
   const root = resolve(args.projectRoot);
-  const configFile = args.configFile ?? args.layout?.mcpConfigFile ?? path.join('.code', 'mcp.json');
-  const mcpJsonPath = path.isAbsolute(configFile) ? configFile : path.join(root, configFile);
+  const explicit = args.configFile ?? args.layout?.mcpConfigFile;
+  let configFile = explicit ?? path.join('.agents', 'mcp.json');
+  let mcpJsonPath = path.isAbsolute(configFile) ? configFile : path.join(root, configFile);
+
+  if (!explicit && !fs.existsSync(mcpJsonPath)) {
+    // Legacy fallback
+    const legacy = path.join(root, '.code', 'mcp.json');
+    if (fs.existsSync(legacy)) {
+      configFile = legacy;
+      mcpJsonPath = legacy;
+    }
+  }
 
   if (!fs.existsSync(mcpJsonPath)) return [];
 
