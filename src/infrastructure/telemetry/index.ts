@@ -3,3 +3,9 @@ export { createDefaultTelemetry } from './telemetryConfig';
 export { formatTraceEventForTerminal } from './traceEventFormatter';
 export { LangfuseTraceSink, createLangfuseTraceSinkFromEnv } from './langfuseTraceSink';
 export type { LangfuseTraceSinkOptions } from './langfuseTraceSink';
+export {
+  createLangfuseOpenAIClientFactory,
+  createLangfuseOpenAIClientFactoryFromEnv,
+  createLangfuseNativeLlmTelemetryConfig,
+} from './langfuseOpenAIClientFactory';
+export type { LangfuseOpenAIClientFactoryOptions } from './langfuseOpenAIClientFactory';

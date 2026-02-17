@@ -1,7 +1,15 @@
-import type { TelemetryOptions, TraceSink } from '@ericnunes/frame-agent-sdk';
+import type {
+  TelemetryOptions,
+  TraceSink,
+} from '@ericnunes/frame-agent-sdk';
 import { MultiplexTraceSink } from '@ericnunes/frame-agent-sdk';
 import { ConsoleTraceSink } from './traceSinkConsole';
 import { createLangfuseTraceSinkFromEnv } from './langfuseTraceSink';
+import {
+  createLangfuseNativeLlmTelemetryConfig,
+  createLangfuseOpenAIClientFactoryFromEnv,
+} from './langfuseOpenAIClientFactory';
+import type { RuntimeOpenAIClientFactory, RuntimeNativeLlmTelemetryConfig } from '../../runtime/types';
 
 type TelemetryLevel = 'info' | 'debug';
 
@@ -27,8 +35,15 @@ export function createDefaultTelemetry(opts?: {
   langfuse?: {
     enabled?: boolean;
     flushOnRunFinished?: boolean;
+    nativeOpenAIEnabled?: boolean;
   };
-}): { trace: TraceSink; telemetry: TelemetryOptions; verbose: boolean } {
+}): {
+  trace: TraceSink;
+  telemetry: TelemetryOptions;
+  verbose: boolean;
+  openAIClientFactory?: RuntimeOpenAIClientFactory;
+  nativeLlmTelemetry?: RuntimeNativeLlmTelemetryConfig;
+} {
   const enabled = opts?.enabled ?? readBool(process.env.TELEMETRY_ENABLED, true);
   const verbose = opts?.verbose ?? readBool(process.env.TELEMETRY_VERBOSE, readBool(process.env.DEBUG, false));
   const level = opts?.level ?? readLevel(process.env.TELEMETRY_LEVEL, verbose ? 'debug' : 'info');
@@ -54,7 +69,22 @@ export function createDefaultTelemetry(opts?: {
     if (langfuseSink) sinks.push(langfuseSink);
   }
 
+  const nativeOpenAIEnabled =
+    opts?.langfuse?.nativeOpenAIEnabled ??
+    readBool(process.env.LANGFUSE_OPENAI_NATIVE_ENABLED ?? process.env.LANGFUSE_NATIVE_OPENAI_ENABLED, true);
+  const openAIClientFactory =
+    enabled && nativeOpenAIEnabled
+      ? createLangfuseOpenAIClientFactoryFromEnv({ enabled: true })
+      : undefined;
+  const nativeLlmTelemetry = createLangfuseNativeLlmTelemetryConfig(Boolean(openAIClientFactory));
+
   const trace = new MultiplexTraceSink(sinks);
 
-  return { trace, telemetry, verbose };
+  return {
+    trace,
+    telemetry,
+    verbose,
+    ...(openAIClientFactory ? { openAIClientFactory } : {}),
+    ...(nativeLlmTelemetry ? { nativeLlmTelemetry } : {}),
+  };
 }

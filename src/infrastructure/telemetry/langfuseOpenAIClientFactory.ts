@@ -1,0 +1,138 @@
+import { observeOpenAI } from 'langfuse';
+import type {
+  RuntimeNativeLlmTelemetryConfig,
+  RuntimeOpenAIClientFactory,
+  RuntimeOpenAIClientFactoryArgs,
+} from '../../runtime/types';
+
+export type LangfuseOpenAIClientFactoryOptions = {
+  enabled?: boolean;
+  defaultTags?: string[];
+  defaultMetadata?: Record<string, unknown>;
+  clientInitParams?: {
+    publicKey?: string;
+    secretKey?: string;
+    baseUrl?: string;
+    environment?: string;
+    release?: string;
+  };
+};
+
+function safeString(value: unknown): string | undefined {
+  return typeof value === 'string' && value.trim().length > 0 ? value.trim() : undefined;
+}
+
+function readBool(value: string | undefined, defaultValue: boolean): boolean {
+  if (value == null) return defaultValue;
+  if (value === '1') return true;
+  if (value === '0') return false;
+  return value.toLowerCase() === 'true';
+}
+
+function splitCsv(value: string | undefined): string[] | undefined {
+  if (!value) return undefined;
+  const items = value
+    .split(',')
+    .map((item) => item.trim())
+    .filter(Boolean);
+  return items.length > 0 ? [...new Set(items)] : undefined;
+}
+
+function buildClientInitParams(
+  raw?: LangfuseOpenAIClientFactoryOptions['clientInitParams'],
+): Record<string, string> | undefined {
+  if (!raw) return undefined;
+  const params: Record<string, string> = {};
+  const publicKey = safeString(raw.publicKey);
+  const secretKey = safeString(raw.secretKey);
+  const baseUrl = safeString(raw.baseUrl);
+  const environment = safeString(raw.environment);
+  const release = safeString(raw.release);
+  if (publicKey) params.publicKey = publicKey;
+  if (secretKey) params.secretKey = secretKey;
+  if (baseUrl) params.baseUrl = baseUrl;
+  if (environment) params.environment = environment;
+  if (release) params.release = release;
+  return Object.keys(params).length > 0 ? params : undefined;
+}
+
+export function createLangfuseNativeLlmTelemetryConfig(enabled: boolean): RuntimeNativeLlmTelemetryConfig | undefined {
+  if (!enabled) return undefined;
+  return {
+    enabled: true,
+    provider: 'langfuse',
+    integration: 'openai',
+  };
+}
+
+export function createLangfuseOpenAIClientFactory(
+  opts?: LangfuseOpenAIClientFactoryOptions,
+): RuntimeOpenAIClientFactory | undefined {
+  const enabled = opts?.enabled ?? true;
+  if (!enabled) return undefined;
+
+  const defaultTags = opts?.defaultTags?.filter((item) => typeof item === 'string' && item.trim().length > 0);
+  const defaultMetadata = opts?.defaultMetadata ?? {};
+  const clientInitParams = buildClientInitParams(opts?.clientInitParams);
+
+  return ({ createDefaultClient, traceContext, providerName, model }: RuntimeOpenAIClientFactoryArgs) => {
+    const client = createDefaultClient();
+
+    const metadata: Record<string, unknown> = {
+      ...defaultMetadata,
+      providerName,
+      ...(model ? { model } : {}),
+      ...(traceContext?.agent ? { agent: traceContext.agent } : {}),
+      ...(traceContext?.flow ? { flow: traceContext.flow } : {}),
+      ...(traceContext?.parentRunId ? { parentRunId: traceContext.parentRunId } : {}),
+    };
+
+    const traceName =
+      traceContext?.flow?.id
+        ? `flow:${traceContext.flow.id}`
+        : traceContext?.agent?.label || traceContext?.agent?.id
+          ? `agent:${traceContext?.agent?.label ?? traceContext?.agent?.id}`
+          : undefined;
+
+    const langfuseConfig: Record<string, unknown> = {
+      ...(traceContext?.runId ? { traceId: traceContext.runId } : {}),
+      ...(traceName ? { traceName } : {}),
+      ...(defaultTags && defaultTags.length > 0 ? { tags: defaultTags } : {}),
+      ...(Object.keys(metadata).length > 0 ? { metadata } : {}),
+      ...(clientInitParams ? { clientInitParams } : {}),
+    };
+
+    return observeOpenAI(client as any, langfuseConfig as any);
+  };
+}
+
+export function createLangfuseOpenAIClientFactoryFromEnv(
+  opts?: Omit<LangfuseOpenAIClientFactoryOptions, 'clientInitParams' | 'defaultTags'> & { defaultTags?: string[] },
+): RuntimeOpenAIClientFactory | undefined {
+  const enabled =
+    opts?.enabled ??
+    readBool(process.env.LANGFUSE_OPENAI_NATIVE_ENABLED ?? process.env.LANGFUSE_NATIVE_OPENAI_ENABLED, true);
+  if (!enabled) return undefined;
+
+  const publicKey = process.env.LANGFUSE_PUBLIC_KEY ?? process.env.LANGFUSE_PUBLICKEY;
+  const secretKey = process.env.LANGFUSE_SECRET_KEY ?? process.env.LANGFUSE_SECRETKEY;
+  if (!safeString(publicKey) || !safeString(secretKey)) return undefined;
+
+  const baseUrl = process.env.LANGFUSE_BASEURL ?? process.env.LANGFUSE_BASE_URL ?? process.env.LANGFUSE_HOST;
+  const environment = process.env.LANGFUSE_ENVIRONMENT;
+  const release = process.env.LANGFUSE_RELEASE;
+  const envTags = splitCsv(process.env.LANGFUSE_OPENAI_TAGS);
+
+  return createLangfuseOpenAIClientFactory({
+    enabled: true,
+    defaultMetadata: opts?.defaultMetadata,
+    defaultTags: opts?.defaultTags ?? envTags,
+    clientInitParams: {
+      publicKey,
+      secretKey,
+      baseUrl,
+      environment,
+      release,
+    },
+  });
+}

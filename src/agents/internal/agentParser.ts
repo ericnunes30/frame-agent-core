@@ -9,7 +9,6 @@ import {
   type AgentLLMConfig,
   type GraphDefinition,
   type ITool,
-  type TelemetryOptions,
 } from '@ericnunes/frame-agent-sdk';
 
 import { REACT_AGENT_FLOW } from '../flows/ReactAgentFlow';
@@ -25,6 +24,7 @@ import { logger } from '../../infrastructure/logging/logger';
 import { McpLoader } from '../../tools/mcp/loader';
 import { filterToolsByPolicy as applyToolPolicy } from '../../tools/registry/toolFilter';
 import type { FrameProjectLayout } from '../../runtime/layout';
+import type { RuntimeTelemetryConfig } from '../../runtime/types';
 
 /**
  * Parseia arquivo .md do agente e retorna IAgentMetadata.
@@ -266,8 +266,9 @@ function buildAgentLlmConfig(args: {
   agentConfig: any;
   metadata: IAgentMetadata;
   supportsVision: boolean;
+  runtimeTelemetry?: RuntimeTelemetryConfig;
 }): AgentLLMConfig {
-  return {
+  const llmConfig: AgentLLMConfig = {
     model: args.metadata.model || args.agentConfig.model || args.config.defaults?.model || 'gpt-4o-mini',
     provider: args.agentConfig.provider || args.config.provider,
     apiKey: args.agentConfig.apiKey || args.config.apiKey,
@@ -280,6 +281,16 @@ function buildAgentLlmConfig(args: {
       topP: args.agentConfig.topP ?? args.config.defaults?.topP,
     },
   };
+
+  const llmConfigWithTelemetry = llmConfig as AgentLLMConfig & {
+    openAIClientFactory?: RuntimeTelemetryConfig['openAIClientFactory'];
+    nativeLlmTelemetry?: RuntimeTelemetryConfig['nativeLlmTelemetry'];
+  };
+
+  llmConfigWithTelemetry.openAIClientFactory = args.runtimeTelemetry?.openAIClientFactory;
+  llmConfigWithTelemetry.nativeLlmTelemetry = args.runtimeTelemetry?.nativeLlmTelemetry;
+
+  return llmConfigWithTelemetry;
 }
 
 function buildSystemPrompt(args: {
@@ -385,7 +396,7 @@ async function maybeConfigureCallFlowForSubAgents(args: {
   mcpConfigFile?: string;
   metadata: IAgentMetadata;
   registry?: AgentRegistryLike;
-  telemetry?: { trace: any; telemetry: TelemetryOptions };
+  telemetry?: RuntimeTelemetryConfig;
   skipSubAgents?: boolean;
   llmConfig: AgentLLMConfig;
   tools: ITool[];
@@ -448,7 +459,7 @@ async function createAgentWithDefinition(
     layout?: FrameProjectLayout;
   },
   metadata: IAgentMetadata,
-  telemetry?: { trace: any; telemetry: TelemetryOptions }
+  telemetry?: RuntimeTelemetryConfig
 ): Promise<AgentCreationResult> {
   const config = await loadConfig(args.projectRoot);
 
@@ -471,7 +482,7 @@ async function createAgentWithDefinition(
     configFile: args.layout?.agentConfigFile,
   });
   const supportsVision = resolveSupportsVision({ config, agentConfig });
-  const llmConfig = buildAgentLlmConfig({ config, agentConfig, metadata, supportsVision });
+  const llmConfig = buildAgentLlmConfig({ config, agentConfig, metadata, supportsVision, runtimeTelemetry: telemetry });
 
   const allTools = toolRegistry.listTools();
   const finalTools = selectToolsForAgent({
@@ -531,7 +542,7 @@ async function createAgentWithDefinition(
 export async function createAgentFromFlow(
   args: { projectRoot: string; mcpConfigFile?: string; registry?: AgentRegistryLike; layout?: FrameProjectLayout },
   metadata: IAgentMetadata,
-  telemetry?: { trace: any; telemetry: TelemetryOptions },
+  telemetry?: RuntimeTelemetryConfig,
   skipSubAgents?: boolean
 ): Promise<GraphEngine> {
   const config = await loadConfig(args.projectRoot);
@@ -557,7 +568,7 @@ export async function createAgentFromFlow(
     configFile: args.layout?.agentConfigFile,
   });
   const supportsVision = resolveSupportsVision({ config, agentConfig });
-  const llmConfig = buildAgentLlmConfig({ config, agentConfig, metadata, supportsVision });
+  const llmConfig = buildAgentLlmConfig({ config, agentConfig, metadata, supportsVision, runtimeTelemetry: telemetry });
 
   const allTools = toolRegistry.listTools();
   let finalTools = selectToolsForAgent({

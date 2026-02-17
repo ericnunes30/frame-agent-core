@@ -4,7 +4,7 @@ import type { IGraphState, Message } from '@ericnunes/frame-agent-sdk';
 import { AgentRegistry } from '../agents';
 import { initializeTools } from '../tools/registry/ToolInitializer';
 import { logger } from '../infrastructure/logging/logger';
-import type { FrameRuntime, FrameRuntimeOptions, FrameRunResult } from './types';
+import type { FrameRuntime, FrameRuntimeOptions, FrameRunResult, RuntimeTelemetryConfig } from './types';
 import { resolveProjectLayout } from './layout';
 
 type RunStoreEntry = {
@@ -58,6 +58,8 @@ export async function createFrameRuntime(options: FrameRuntimeOptions): Promise<
   await registry.load();
 
   const runs = new Map<string, RunStoreEntry>();
+  const resolveTelemetry = (override?: RuntimeTelemetryConfig): RuntimeTelemetryConfig | undefined =>
+    override ?? options.telemetry;
 
   async function run(args: {
     agentId: string;
@@ -66,7 +68,7 @@ export async function createFrameRuntime(options: FrameRuntimeOptions): Promise<
     parentRunId?: string;
     initialState?: Partial<IGraphState>;
   }): Promise<FrameRunResult> {
-    const engine = await registry.createEngine(args.agentId, options.telemetry);
+    const engine = await registry.createEngine(args.agentId, resolveTelemetry());
 
     const baseMessages = args.initialState?.messages?.length
       ? (args.initialState.messages as any)
@@ -95,7 +97,7 @@ export async function createFrameRuntime(options: FrameRuntimeOptions): Promise<
     const entry = runs.get(args.runId);
     if (!entry) throw new Error(`runId nao encontrado no runtime: ${args.runId}`);
 
-    const engine = await registry.createEngine(entry.agentId, options.telemetry);
+    const engine = await registry.createEngine(entry.agentId, resolveTelemetry());
     const userInput: Message = { role: 'user', content: args.input } as any;
     const result = await engine.resume(entry.state, userInput);
 
@@ -106,7 +108,7 @@ export async function createFrameRuntime(options: FrameRuntimeOptions): Promise<
   }
 
   async function resumeFromState(args: { agentId: string; state: IGraphState; userInput?: Message }): Promise<FrameRunResult> {
-    const engine = await registry.createEngine(args.agentId, options.telemetry);
+    const engine = await registry.createEngine(args.agentId, resolveTelemetry());
     const result = await engine.resume(args.state, args.userInput);
     const runId = (result.state.metadata as any)?.runId as string | undefined;
     if (runId) runs.set(runId, { agentId: args.agentId, state: result.state });
@@ -116,7 +118,8 @@ export async function createFrameRuntime(options: FrameRuntimeOptions): Promise<
   return {
     listAgents: () => registry.listSummaries(),
     getAgentMetadata: (agentId: string) => registry.getMetadata(agentId),
-    createEngine: async (agentId: string) => registry.createEngine(agentId, options.telemetry),
+    createEngine: async (agentId: string, telemetry?: RuntimeTelemetryConfig) =>
+      registry.createEngine(agentId, resolveTelemetry(telemetry)),
     run,
     resume,
     resumeFromState,
