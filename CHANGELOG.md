@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.0.6 - 2026-02-17
+- Update dependency to `@ericnunes/frame-agent-sdk@^0.0.10` to include incremental ToDoIst planning actions (`add_task`, `remove_task`, `reorder_tasks`).
+
 ## 0.0.5 - 2026-02-17
 - Langfuse hybrid telemetry: add explicit native OpenAI flush integration (`observeOpenAI.flushAsync`) in the default telemetry flush lifecycle.
 - Improve short-lived CLI run reliability so traces/generations are persisted before process termination.
