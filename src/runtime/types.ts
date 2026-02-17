@@ -26,6 +26,8 @@ export type RuntimeOpenAIClientFactoryArgs = {
     runId: string;
     parentRunId?: string;
     orchestrator: 'graph' | 'steps';
+    sessionId?: string;
+    userId?: string;
     agent?: { id?: string; label?: string };
     flow?: { id?: string; kind?: string };
   };
@@ -93,6 +95,7 @@ export interface FrameRuntime {
     agentId: string;
     input: string;
     sessionId?: string;
+    userId?: string;
     parentRunId?: string;
     initialState?: Partial<IGraphState>;
   }): Promise<FrameRunResult>;

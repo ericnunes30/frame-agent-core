@@ -10,6 +10,7 @@ import {
   createLangfuseOpenAIClientFactoryFromEnv,
   flushLangfuseNativeOpenAIClient,
 } from './langfuseOpenAIClientFactory';
+import { installLangfuseNoiseFilter } from './langfuseNoiseFilter';
 import type { RuntimeOpenAIClientFactory, RuntimeNativeLlmTelemetryConfig } from '../../runtime/types';
 
 type TelemetryLevel = 'info' | 'debug';
@@ -62,6 +63,10 @@ export function createDefaultTelemetry(opts?: {
 
   const sinks: TraceSink[] = [consoleSink];
   const langfuseEnabled = opts?.langfuse?.enabled ?? readBool(process.env.LANGFUSE_ENABLED, true);
+  if (enabled && langfuseEnabled) {
+    const suppressLangfuseNoise = readBool(process.env.LANGFUSE_SUPPRESS_NOISE, true);
+    installLangfuseNoiseFilter(suppressLangfuseNoise);
+  }
   if (enabled && langfuseEnabled) {
     const langfuseSink = createLangfuseTraceSinkFromEnv({
       enabled: true,

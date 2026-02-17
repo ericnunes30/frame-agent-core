@@ -4,6 +4,7 @@ import type { IGraphState, Message } from '@ericnunes/frame-agent-sdk';
 import { AgentRegistry } from '../agents';
 import { initializeTools } from '../tools/registry/ToolInitializer';
 import { logger } from '../infrastructure/logging/logger';
+import { resolveSessionTelemetryContext } from '../infrastructure/telemetry/sessionContext';
 import type { FrameRuntime, FrameRuntimeOptions, FrameRunResult, RuntimeTelemetryConfig } from './types';
 import { resolveProjectLayout } from './layout';
 
@@ -65,6 +66,7 @@ export async function createFrameRuntime(options: FrameRuntimeOptions): Promise<
     agentId: string;
     input: string;
     sessionId?: string;
+    userId?: string;
     parentRunId?: string;
     initialState?: Partial<IGraphState>;
   }): Promise<FrameRunResult> {
@@ -74,12 +76,19 @@ export async function createFrameRuntime(options: FrameRuntimeOptions): Promise<
       ? (args.initialState.messages as any)
       : ([{ role: 'user', content: args.input }] as any);
 
+    const initialMetadata = { ...(args.initialState?.metadata as any) } as Record<string, unknown>;
+    const sessionContext = resolveSessionTelemetryContext({
+      sessionId: args.sessionId ?? (initialMetadata.sessionId as string | undefined),
+      userId: args.userId ?? (initialMetadata.userId as string | undefined),
+    });
+
     const initial: IGraphState = {
       ...(args.initialState as any),
       messages: baseMessages,
       metadata: {
-        ...(args.initialState?.metadata as any),
-        ...(args.sessionId ? { sessionId: args.sessionId } : {}),
+        ...initialMetadata,
+        sessionId: sessionContext.sessionId,
+        ...(sessionContext.userId ? { userId: sessionContext.userId } : {}),
         ...(args.parentRunId ? { parentRunId: args.parentRunId } : {}),
       },
     } as any;
