@@ -1,9 +1,47 @@
-import type { GraphEngine, GraphRunResult, Message, TelemetryOptions, IGraphState } from '@ericnunes/frame-agent-sdk';
+import type {
+  GraphEngine,
+  GraphRunResult,
+  Message,
+  TelemetryOptions,
+  IGraphState,
+} from '@ericnunes/frame-agent-sdk';
 import type { IAgentMetadata, IAgentMetadataSummary } from '../agents/interfaces/agentMetadata.interface';
 import type { McpAliasMode } from '../tools/mcp/register';
 import type { FrameProjectLayout } from './layout';
 
 export type RuntimeProfile = 'safe_readonly' | 'developer_write' | 'developer_exec' | 'ci_headless';
+
+export type RuntimeNativeLlmTelemetryConfig = {
+  enabled: boolean;
+  provider?: string;
+  integration?: string;
+};
+
+export type RuntimeOpenAIClientFactoryArgs = {
+  apiKey: string;
+  baseUrl?: string;
+  providerName: 'openai' | 'openaiCompatible';
+  model?: string;
+  traceContext?: {
+    runId: string;
+    parentRunId?: string;
+    orchestrator: 'graph' | 'steps';
+    agent?: { id?: string; label?: string };
+    flow?: { id?: string; kind?: string };
+  };
+  telemetry?: TelemetryOptions;
+  nativeLlmTelemetry?: RuntimeNativeLlmTelemetryConfig;
+  createDefaultClient: () => unknown;
+};
+
+export type RuntimeOpenAIClientFactory = (args: RuntimeOpenAIClientFactoryArgs) => unknown;
+
+export type RuntimeTelemetryConfig = {
+  trace: any;
+  telemetry: TelemetryOptions;
+  openAIClientFactory?: RuntimeOpenAIClientFactory;
+  nativeLlmTelemetry?: RuntimeNativeLlmTelemetryConfig;
+};
 
 export type FrameRuntimeOptions = {
   projectRoot: string;
@@ -37,10 +75,7 @@ export type FrameRuntimeOptions = {
    */
   layout?: Partial<FrameProjectLayout>;
 
-  telemetry?: {
-    trace: any;
-    telemetry: TelemetryOptions;
-  };
+  telemetry?: RuntimeTelemetryConfig;
 };
 
 export type FrameRunResult = GraphRunResult & {
@@ -52,7 +87,7 @@ export interface FrameRuntime {
   listAgents(): IAgentMetadataSummary[];
   getAgentMetadata(agentId: string): IAgentMetadata | undefined;
 
-  createEngine(agentId: string): Promise<GraphEngine>;
+  createEngine(agentId: string, telemetry?: RuntimeTelemetryConfig): Promise<GraphEngine>;
 
   run(args: {
     agentId: string;

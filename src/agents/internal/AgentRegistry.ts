@@ -1,9 +1,9 @@
-import type { TelemetryOptions } from '@ericnunes/frame-agent-sdk';
 import { GraphEngine } from '@ericnunes/frame-agent-sdk';
 import { logger } from '../../infrastructure/logging/logger';
 import { discoverAgents, createAgentFromFlow } from './agentParser';
 import type { IAgentMetadata, IAgentMetadataSummary, IAgentRegistrationResult } from '../interfaces/agentMetadata.interface';
 import type { FrameProjectLayout } from '../../runtime/layout';
+import type { RuntimeTelemetryConfig } from '../../runtime/types';
 
 export class AgentRegistry {
   private readonly agents: Map<string, IAgentMetadata> = new Map();
@@ -80,7 +80,7 @@ export class AgentRegistry {
     this.agents.clear();
   }
 
-  public async createEngine(name: string, telemetry?: { trace: any; telemetry: TelemetryOptions }): Promise<GraphEngine> {
+  public async createEngine(name: string, telemetry?: RuntimeTelemetryConfig): Promise<GraphEngine> {
     const metadata = this.get(name);
     if (!metadata) throw new Error(`Agent '${name}' nao encontrado`);
 

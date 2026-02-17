@@ -182,6 +182,19 @@ function extractGenerationModelParameters(
   return Object.keys(sanitized).length ? sanitized : undefined;
 }
 
+function isLangfuseNativeGenerationManaged(event: TraceEvent): boolean {
+  const data = event.data as Record<string, unknown> | undefined;
+  const native = data?.nativeLlmTelemetry;
+  if (!native || typeof native !== 'object' || Array.isArray(native)) return false;
+
+  const enabled = (native as any).enabled === true;
+  if (!enabled) return false;
+
+  const provider = safeString((native as any).provider);
+  if (!provider) return true;
+  return provider.toLowerCase() === 'langfuse';
+}
+
 /**
  * `TraceSink` para enviar os eventos do SDK ao Langfuse.
  *
@@ -440,6 +453,8 @@ export class LangfuseTraceSink implements TraceSink {
   }
 
   private onGenerationStarted(event: TraceEvent): void {
+    if (isLangfuseNativeGenerationManaged(event)) return;
+
     const genId = safeString(event.spanId);
     if (!genId) return;
 
@@ -476,6 +491,8 @@ export class LangfuseTraceSink implements TraceSink {
   }
 
   private onGenerationFinished(event: TraceEvent): void {
+    if (isLangfuseNativeGenerationManaged(event)) return;
+
     const genId = safeString(event.spanId);
     if (!genId) return;
     const generation = this.generations.get(genId);
@@ -514,6 +531,8 @@ export class LangfuseTraceSink implements TraceSink {
   }
 
   private onGenerationFailed(event: TraceEvent): void {
+    if (isLangfuseNativeGenerationManaged(event)) return;
+
     const genId = safeString(event.spanId);
     if (!genId) return;
     const generation = this.generations.get(genId);
@@ -550,7 +569,7 @@ export function createLangfuseTraceSinkFromEnv(
   const secretKey = process.env.LANGFUSE_SECRET_KEY ?? process.env.LANGFUSE_SECRETKEY;
   if (!publicKey || !secretKey) return undefined;
 
-  const baseUrl = process.env.LANGFUSE_BASEURL ?? process.env.LANGFUSE_BASE_URL;
+  const baseUrl = process.env.LANGFUSE_BASEURL ?? process.env.LANGFUSE_BASE_URL ?? process.env.LANGFUSE_HOST;
   return new LangfuseTraceSink({
     publicKey,
     secretKey,
