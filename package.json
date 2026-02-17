@@ -1,4 +1,4 @@
-﻿{
+{
   "name": "@ericnunes/frame-agent-core",
   "version": "0.0.2",
   "description": "Harness headless (core) para criar e executar agentes usando frame-agent-sdk: rules, skills, MCP, tool policies e runtime APIs.",
@@ -32,6 +32,7 @@
     "@ericnunes/frame-agent-sdk": "^0.0.7",
     "@typescript-eslint/typescript-estree": "^8.48.0",
     "dotenv": "^17.2.3",
+    "langfuse": "^3.38.6",
     "openai": "^6.10.0"
   },
   "devDependencies": {
@@ -44,4 +45,3 @@
   },
   "license": "SEE LICENSE IN LICENSE"
 }
-

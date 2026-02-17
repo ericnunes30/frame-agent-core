@@ -1,6 +1,7 @@
 import type { TelemetryOptions, TraceSink } from '@ericnunes/frame-agent-sdk';
 import { MultiplexTraceSink } from '@ericnunes/frame-agent-sdk';
 import { ConsoleTraceSink } from './traceSinkConsole';
+import { createLangfuseTraceSinkFromEnv } from './langfuseTraceSink';
 
 type TelemetryLevel = 'info' | 'debug';
 
@@ -23,6 +24,10 @@ export function createDefaultTelemetry(opts?: {
   includePrompts?: boolean;
   maxPayloadChars?: number;
   maxEvents?: number;
+  langfuse?: {
+    enabled?: boolean;
+    flushOnRunFinished?: boolean;
+  };
 }): { trace: TraceSink; telemetry: TelemetryOptions; verbose: boolean } {
   const enabled = opts?.enabled ?? readBool(process.env.TELEMETRY_ENABLED, true);
   const verbose = opts?.verbose ?? readBool(process.env.TELEMETRY_VERBOSE, readBool(process.env.DEBUG, false));
@@ -38,7 +43,18 @@ export function createDefaultTelemetry(opts?: {
   };
 
   const consoleSink = new ConsoleTraceSink({ verbose });
-  const trace = new MultiplexTraceSink([consoleSink]);
+
+  const sinks: TraceSink[] = [consoleSink];
+  const langfuseEnabled = opts?.langfuse?.enabled ?? readBool(process.env.LANGFUSE_ENABLED, true);
+  if (enabled && langfuseEnabled) {
+    const langfuseSink = createLangfuseTraceSinkFromEnv({
+      enabled: true,
+      flushOnRunFinished: opts?.langfuse?.flushOnRunFinished ?? true,
+    });
+    if (langfuseSink) sinks.push(langfuseSink);
+  }
+
+  const trace = new MultiplexTraceSink(sinks);
 
   return { trace, telemetry, verbose };
 }
