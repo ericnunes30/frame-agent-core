@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.0.5 - 2026-02-17
+- Langfuse hybrid telemetry: add explicit native OpenAI flush integration (`observeOpenAI.flushAsync`) in the default telemetry flush lifecycle.
+- Improve short-lived CLI run reliability so traces/generations are persisted before process termination.
+- Update dependency to `@ericnunes/frame-agent-sdk@^0.0.9`.
+
 ## 0.0.1 - 2026-02-16
 - Primeira publicacao do frame-agent-core como runtime/headless do frame-code-cli.
 - Layout configuravel (default `.code/*`): agentes, MCP, config.json, AGENTS.md, skills.

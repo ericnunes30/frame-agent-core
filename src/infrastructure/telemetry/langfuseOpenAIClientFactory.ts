@@ -5,6 +5,28 @@ import type {
   RuntimeOpenAIClientFactoryArgs,
 } from '../../runtime/types';
 
+type FlushableNativeOpenAIClient = {
+  flushAsync?: () => Promise<unknown>;
+};
+
+let nativeOpenAIFlushRef: (() => Promise<unknown>) | undefined;
+
+function registerNativeOpenAIFlush(client: unknown): void {
+  if (!client || typeof client !== 'object') return;
+  const flushAsync = (client as FlushableNativeOpenAIClient).flushAsync;
+  if (typeof flushAsync !== 'function') return;
+  nativeOpenAIFlushRef = flushAsync.bind(client);
+}
+
+export async function flushLangfuseNativeOpenAIClient(): Promise<void> {
+  if (!nativeOpenAIFlushRef) return;
+  try {
+    await nativeOpenAIFlushRef();
+  } catch {
+    // Best-effort: telemetria não deve interromper fluxo principal.
+  }
+}
+
 export type LangfuseOpenAIClientFactoryOptions = {
   enabled?: boolean;
   defaultTags?: string[];
@@ -102,7 +124,9 @@ export function createLangfuseOpenAIClientFactory(
       ...(clientInitParams ? { clientInitParams } : {}),
     };
 
-    return observeOpenAI(client as any, langfuseConfig as any);
+    const observedClient = observeOpenAI(client as any, langfuseConfig as any);
+    registerNativeOpenAIFlush(observedClient);
+    return observedClient;
   };
 }
 

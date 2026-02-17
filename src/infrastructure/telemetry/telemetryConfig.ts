@@ -8,6 +8,7 @@ import { createLangfuseTraceSinkFromEnv } from './langfuseTraceSink';
 import {
   createLangfuseNativeLlmTelemetryConfig,
   createLangfuseOpenAIClientFactoryFromEnv,
+  flushLangfuseNativeOpenAIClient,
 } from './langfuseOpenAIClientFactory';
 import type { RuntimeOpenAIClientFactory, RuntimeNativeLlmTelemetryConfig } from '../../runtime/types';
 
@@ -79,6 +80,11 @@ export function createDefaultTelemetry(opts?: {
   const nativeLlmTelemetry = createLangfuseNativeLlmTelemetryConfig(Boolean(openAIClientFactory));
 
   const trace = new MultiplexTraceSink(sinks);
+  const flushTraceSinks = trace.flush.bind(trace);
+  trace.flush = async (): Promise<void> => {
+    await flushTraceSinks();
+    await flushLangfuseNativeOpenAIClient();
+  };
 
   return {
     trace,
