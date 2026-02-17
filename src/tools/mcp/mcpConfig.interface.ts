@@ -1,5 +1,5 @@
 /**
- * Interfaces para configuracao de MCP via `.code/mcp.json`.
+ * Interfaces para configuracao de MCP via `.agents/mcp.json` (legacy: `.code/mcp.json`).
  */
 export interface McpJsonEntry {
   id: string;
@@ -21,4 +21,3 @@ export interface McpJsonEntry {
 export interface McpJsonConfig {
   mcps: McpJsonEntry[];
 }
-

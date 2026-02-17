@@ -173,10 +173,16 @@ function discoverAgentsInDir(agentsDir: string): IAgentMetadata[] {
 export function discoverAgents(args: { projectRoot: string; agentsDirs?: string[]; layout?: FrameProjectLayout }): IAgentMetadata[] {
   const agents: IAgentMetadata[] = [];
 
+  const defaultAgentsDirRel = path.join('.agents', 'agents');
+  const legacyAgentsDirRel = path.join('.code', 'agents');
+  const defaultAgentsDirAbs = path.resolve(args.projectRoot, defaultAgentsDirRel);
+  const legacyAgentsDirAbs = path.resolve(args.projectRoot, legacyAgentsDirRel);
+  const fallbackAgentsDir = fs.existsSync(defaultAgentsDirAbs) ? defaultAgentsDirRel : legacyAgentsDirRel;
+
   const dirs =
     args.agentsDirs && args.agentsDirs.length > 0
       ? args.agentsDirs
-      : [args.layout?.agentsDir ?? path.join('.code', 'agents')];
+      : [args.layout?.agentsDir ?? fallbackAgentsDir];
   for (const dir of dirs) {
     const absolute = path.isAbsolute(dir) ? dir : path.join(args.projectRoot, dir);
     agents.push(...discoverAgentsInDir(absolute));

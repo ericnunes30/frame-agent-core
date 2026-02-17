@@ -23,7 +23,7 @@ export type FrameRuntimeOptions = {
 
   mcp?: {
     enabled?: boolean;
-    configFile?: string; // default: ".code/mcp.json"
+    configFile?: string; // default: ".agents/mcp.json" (legacy: ".code/mcp.json")
     aliasMode?: McpAliasMode; // default: "stripNamespace"
   };
 
@@ -33,7 +33,7 @@ export type FrameRuntimeOptions = {
   };
 
   /**
-   * Layout de projeto (convencoes de caminhos). Default: equivalente a ".code/*".
+   * Layout de projeto (convencoes de caminhos). Default: equivalente a ".agents/*" (auto-detect legacy ".code/*").
    */
   layout?: Partial<FrameProjectLayout>;
 

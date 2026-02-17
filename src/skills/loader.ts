@@ -19,8 +19,13 @@ export class SkillLoader {
     } else if (args.skillsDir) {
       this.skillsDirs = [path.isAbsolute(args.skillsDir) ? args.skillsDir : resolve(root, args.skillsDir)];
     } else {
-      // Default: prefer .code/skills, fallback .code (compat)
-      this.skillsDirs = [path.join(root, '.code', 'skills'), path.join(root, '.code')];
+      // Default: prefer .agents/skills, fallback .code/skills (legacy), then workspace roots.
+      this.skillsDirs = [
+        path.join(root, '.agents', 'skills'),
+        path.join(root, '.code', 'skills'),
+        path.join(root, '.agents'),
+        path.join(root, '.code'),
+      ];
     }
   }
 
