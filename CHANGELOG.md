@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.0.8 - 2026-02-18
+- Updated dependency to `@ericnunes/frame-agent-sdk@^0.0.12` to consume the latest ToDoIst guardrails, prompt propagation, and ReAct/SAP runtime fixes.
+
 ## 0.0.7 - 2026-02-17
 - Added `resolveSessionTelemetryContext` in telemetry utilities to centralize `sessionId`/`userId` resolution (CLI args + env + UUID fallback).
 - Runtime `run()` now guarantees a `sessionId` in `state.metadata` and supports optional `userId`.
