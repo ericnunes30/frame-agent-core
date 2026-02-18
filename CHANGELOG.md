@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.0.7 - 2026-02-17
+- Added `resolveSessionTelemetryContext` in telemetry utilities to centralize `sessionId`/`userId` resolution (CLI args + env + UUID fallback).
+- Runtime `run()` now guarantees a `sessionId` in `state.metadata` and supports optional `userId`.
+- Langfuse native OpenAI integration now forwards `sessionId` and `userId` into `observeOpenAI` trace config.
+- Langfuse native OpenAI integration now sanitizes null `input_audio`/`audio` fields before multimodal processing to reduce noisy SDK errors in OpenAI-compatible providers.
+- Console telemetry sink now writes via `process.stdout.write(..., 'utf8')` for better UTF-8 rendering in terminals (including Windows/MINGW).
+- Added `LANGFUSE_SUPPRESS_NOISE` (default `true`) to hide known non-fatal Langfuse multimodal noise while keeping other errors visible.
+- Updated dependency to `@ericnunes/frame-agent-sdk@^0.0.11`.
+
 ## 0.0.6 - 2026-02-17
 - Update dependency to `@ericnunes/frame-agent-sdk@^0.0.10` to include incremental ToDoIst planning actions (`add_task`, `remove_task`, `reorder_tasks`).
 

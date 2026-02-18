@@ -37,6 +37,8 @@ export type LangfuseOpenAIClientFactoryOptions = {
     baseUrl?: string;
     environment?: string;
     release?: string;
+    mask?: (params: { data: unknown }) => unknown;
+    [key: string]: unknown;
   };
 };
 
@@ -60,11 +62,51 @@ function splitCsv(value: string | undefined): string[] | undefined {
   return items.length > 0 ? [...new Set(items)] : undefined;
 }
 
+function sanitizeMultimodalNullData(value: unknown, depth = 0): unknown {
+  if (depth > 12) return value;
+  if (value === null || value === undefined) return value;
+  if (Array.isArray(value)) return value.map((item) => sanitizeMultimodalNullData(item, depth + 1));
+  if (typeof value !== 'object') return value;
+
+  const input = value as Record<string, unknown>;
+  let changed = false;
+  const output: Record<string, unknown> = {};
+
+  for (const [key, raw] of Object.entries(input)) {
+    if ((key === 'input_audio' || key === 'audio') && raw === null) {
+      changed = true;
+      continue;
+    }
+
+    const sanitized = sanitizeMultimodalNullData(raw, depth + 1);
+    output[key] = sanitized;
+    if (sanitized !== raw) changed = true;
+  }
+
+  return changed ? output : value;
+}
+
+function createSafeMask(userMask?: (params: { data: unknown }) => unknown): (params: { data: unknown }) => unknown {
+  return ({ data }) => {
+    const sanitized = sanitizeMultimodalNullData(data);
+    if (!userMask) return sanitized;
+
+    try {
+      return userMask({ data: sanitized });
+    } catch {
+      return sanitized;
+    }
+  };
+}
+
 function buildClientInitParams(
   raw?: LangfuseOpenAIClientFactoryOptions['clientInitParams'],
-): Record<string, string> | undefined {
-  if (!raw) return undefined;
-  const params: Record<string, string> = {};
+): Record<string, unknown> {
+  const params: Record<string, unknown> = {
+    mask: createSafeMask(typeof raw?.mask === 'function' ? raw.mask : undefined),
+  };
+  if (!raw) return params;
+
   const publicKey = safeString(raw.publicKey);
   const secretKey = safeString(raw.secretKey);
   const baseUrl = safeString(raw.baseUrl);
@@ -75,7 +117,7 @@ function buildClientInitParams(
   if (baseUrl) params.baseUrl = baseUrl;
   if (environment) params.environment = environment;
   if (release) params.release = release;
-  return Object.keys(params).length > 0 ? params : undefined;
+  return params;
 }
 
 export function createLangfuseNativeLlmTelemetryConfig(enabled: boolean): RuntimeNativeLlmTelemetryConfig | undefined {
@@ -107,6 +149,8 @@ export function createLangfuseOpenAIClientFactory(
       ...(traceContext?.agent ? { agent: traceContext.agent } : {}),
       ...(traceContext?.flow ? { flow: traceContext.flow } : {}),
       ...(traceContext?.parentRunId ? { parentRunId: traceContext.parentRunId } : {}),
+      ...(traceContext?.sessionId ? { sessionId: traceContext.sessionId } : {}),
+      ...(traceContext?.userId ? { userId: traceContext.userId } : {}),
     };
 
     const traceName =
@@ -119,6 +163,8 @@ export function createLangfuseOpenAIClientFactory(
     const langfuseConfig: Record<string, unknown> = {
       ...(traceContext?.runId ? { traceId: traceContext.runId } : {}),
       ...(traceName ? { traceName } : {}),
+      ...(traceContext?.sessionId ? { sessionId: traceContext.sessionId } : {}),
+      ...(traceContext?.userId ? { userId: traceContext.userId } : {}),
       ...(defaultTags && defaultTags.length > 0 ? { tags: defaultTags } : {}),
       ...(Object.keys(metadata).length > 0 ? { metadata } : {}),
       ...(clientInitParams ? { clientInitParams } : {}),
