@@ -3,6 +3,7 @@ import * as path from 'path';
 import {
   GraphEngine,
   createAgentNode,
+  createToolExecutorNode,
   FlowRegistryImpl,
   FlowRunnerImpl,
   CallFlowTool,
@@ -293,6 +294,17 @@ function buildAgentLlmConfig(args: {
   return llmConfigWithTelemetry;
 }
 
+function createExecuteNodeForAgent(args: { tools: ITool[]; toolPolicy?: IAgentMetadata['toolPolicy'] }) {
+  const hasToDoIstTool = args.tools.some((tool) => tool.name === 'toDoIst');
+  return createToolExecutorNode({
+    toolPolicy: args.toolPolicy,
+    todoPlanGuard: {
+      enabled: hasToDoIstTool,
+      minInitialPlanItems: 2,
+    },
+  });
+}
+
 function buildSystemPrompt(args: {
   projectRoot: string;
   metadata: IAgentMetadata;
@@ -494,6 +506,10 @@ async function createAgentWithDefinition(
   });
 
   const graphDefinition: GraphDefinition = { ...REACT_AGENT_FLOW, nodes: { ...REACT_AGENT_FLOW.nodes } };
+  graphDefinition.nodes.execute = createExecuteNodeForAgent({
+    tools: finalTools,
+    toolPolicy: metadata.toolPolicy,
+  });
 
   graphDefinition.nodes.agent = createAgentNode({
     llm: llmConfig,
@@ -592,6 +608,10 @@ export async function createAgentFromFlow(
   });
 
   const graphDefinition: GraphDefinition = { ...REACT_AGENT_FLOW, nodes: { ...REACT_AGENT_FLOW.nodes } };
+  graphDefinition.nodes.execute = createExecuteNodeForAgent({
+    tools: finalTools,
+    toolPolicy: metadata.toolPolicy,
+  });
 
   graphDefinition.nodes.agent = createAgentNode({
     llm: llmConfig,

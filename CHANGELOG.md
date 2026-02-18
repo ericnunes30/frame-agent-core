@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.0.9 - 2026-02-18
+- Enabled conditional ToDoIst plan guardrails in core agent flow wiring by creating the `execute` node with `todoPlanGuard` when `toDoIst` is available to the agent.
+- Ensures runtime blocking of non-incremental plan transitions (e.g., mass completion) in `frame-code-cli` executions that run through core.
+
 ## 0.0.8 - 2026-02-18
 - Updated dependency to `@ericnunes/frame-agent-sdk@^0.0.12` to consume the latest ToDoIst guardrails, prompt propagation, and ReAct/SAP runtime fixes.
 

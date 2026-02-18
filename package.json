@@ -1,6 +1,6 @@
 {
   "name": "@ericnunes/frame-agent-core",
-  "version": "0.0.8",
+  "version": "0.0.9",
   "description": "Harness headless (core) para criar e executar agentes usando frame-agent-sdk: rules, skills, MCP, tool policies e runtime APIs.",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
