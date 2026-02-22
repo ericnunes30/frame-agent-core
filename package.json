@@ -29,7 +29,7 @@
     "prepare": "npm run build"
   },
   "dependencies": {
-    "@ericnunes/frame-agent-sdk": "^0.0.12",
+    "@ericnunes/frame-agent-sdk": "file:../frame-agent-sdk",
     "@typescript-eslint/typescript-estree": "^8.48.0",
     "dotenv": "^17.2.3",
     "langfuse": "^3.38.6",

@@ -6,4 +6,4 @@ export type { IMcpMetadata } from './loader';
 export { McpLoader } from './loader';
 export type { McpAliasMode } from './register';
 export { registerMcpTools } from './register';
-
+export { shutdownMcpTools } from './register';

@@ -5,6 +5,7 @@ export type { ToolPolicy } from '../../tools/registry/toolFilter';
 export interface IAgentMetadata {
   name: string;
   type: AgentType | 'main-agent' | 'sub-agent';
+  allowDualRole?: boolean;
   canBeSupervisor: boolean;
   description: string;
   keywords: string[];

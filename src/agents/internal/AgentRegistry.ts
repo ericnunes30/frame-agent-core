@@ -4,6 +4,7 @@ import { discoverAgents, createAgentFromFlow } from './agentParser';
 import type { IAgentMetadata, IAgentMetadataSummary, IAgentRegistrationResult } from '../interfaces/agentMetadata.interface';
 import type { FrameProjectLayout } from '../../runtime/layout';
 import type { RuntimeTelemetryConfig } from '../../runtime/types';
+import { canActAsMainAgent, canActAsSubAgent } from './agentRoleResolver';
 
 export class AgentRegistry {
   private readonly agents: Map<string, IAgentMetadata> = new Map();
@@ -65,7 +66,13 @@ export class AgentRegistry {
   }
 
   public listByType(type: string): IAgentMetadata[] {
-    return this.list().filter((a) => a.type === type);
+    if (type === 'main-agent') {
+      return this.list().filter((agent) => canActAsMainAgent(agent));
+    }
+    if (type === 'sub-agent') {
+      return this.list().filter((agent) => canActAsSubAgent(agent));
+    }
+    return this.list().filter((agent) => agent.type === type);
   }
 
   public has(name: string): boolean {
