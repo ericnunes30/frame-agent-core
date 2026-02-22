@@ -12,7 +12,8 @@ export interface IProjectRules {
 export const loadProjectRules = {
   /**
    * Carrega o arquivo AGENTS.md do projeto.
-   * Prioridade default: .agents/AGENTS.md > .code/AGENTS.md > AGENTS.md (raiz)
+   * Carrega AMBOS: .agents/.code/AGENTS.md (rules) + AGENTS.md (raiz/fallback)
+   * Os conteúdos são concatenados, com rules primeiro, depois fallback.
    */
   load(
     projectRoot: string,
@@ -33,26 +34,41 @@ export const loadProjectRules = {
         : path.join(root, options.rulesFallbackFile)
       : path.join(root, 'AGENTS.md');
 
+    let content = '';
+    let source: IProjectRules['source'] = 'none';
+    let pathFound = '';
+
+    // Carrega rules (.agents/ ou .code/AGENTS.md) do projeto atual
     if (fs.existsSync(primaryPath)) {
-      const content = fs.readFileSync(primaryPath, 'utf-8');
+      content = fs.readFileSync(primaryPath, 'utf-8');
+      source = 'code-dir';
+      pathFound = primaryPath;
       logger.info(`[loadProjectRules] Carregado rules file: ${primaryPath}`);
-      return { content, source: 'code-dir', path: primaryPath };
-    }
-
-    if (!options?.rulesFile && fs.existsSync(legacyPrimaryPath)) {
-      const content = fs.readFileSync(legacyPrimaryPath, 'utf-8');
+    } else if (!options?.rulesFile && fs.existsSync(legacyPrimaryPath)) {
+      const legacyContent = fs.readFileSync(legacyPrimaryPath, 'utf-8');
+      content = legacyContent;
+      source = 'code-dir';
+      pathFound = legacyPrimaryPath;
       logger.info(`[loadProjectRules] Carregado rules legacy: ${legacyPrimaryPath}`);
-      return { content, source: 'code-dir', path: legacyPrimaryPath };
     }
 
+    // Carrega fallback (AGENTS.md na raiz) e concatena
     if (fs.existsSync(fallbackPath)) {
-      const content = fs.readFileSync(fallbackPath, 'utf-8');
+      const fallbackContent = fs.readFileSync(fallbackPath, 'utf-8');
+      if (content) {
+        content += '\n\n---\n\n'; // Separa os conteúdos
+      }
+      content += fallbackContent;
+      source = 'root';
+      pathFound = fallbackPath;
       logger.info(`[loadProjectRules] Carregado rules fallback: ${fallbackPath}`);
-      return { content, source: 'root', path: fallbackPath };
     }
 
-    logger.debug('[loadProjectRules] AGENTS.md nao encontrado no projeto');
-    return { content: '', source: 'none', path: '' };
+    if (!content) {
+      logger.debug('[loadProjectRules] AGENTS.md nao encontrado no projeto');
+    }
+
+    return { content, source, path: pathFound };
   },
 
   /**

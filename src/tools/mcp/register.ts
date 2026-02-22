@@ -4,6 +4,8 @@ import { McpLoader } from './loader';
 
 export type McpAliasMode = 'stripNamespace' | 'none';
 
+const activeMcpConnections = new Set<MCPBase>();
+
 export async function registerMcpTools(args: {
   projectRoot: string;
   configFile?: string;
@@ -42,6 +44,7 @@ async function registerSingleMcp(config: any, name: string, aliasMode: McpAliasM
 
   logger.info(`[registerMcpTools] Conectando ao MCP ${config.id} (${name})...`);
   await mcp.connect();
+  activeMcpConnections.add(mcp);
 
   let tools: any[] = [];
 
@@ -81,4 +84,21 @@ async function registerSingleMcp(config: any, name: string, aliasMode: McpAliasM
 
   logger.info(`[registerMcpTools] ${registered} ferramentas MCP registradas (${name})`);
   return registered;
+}
+
+export async function shutdownMcpTools(): Promise<void> {
+  if (activeMcpConnections.size === 0) return;
+
+  const connections = Array.from(activeMcpConnections);
+  activeMcpConnections.clear();
+
+  await Promise.all(
+    connections.map(async (mcp) => {
+      try {
+        await mcp.disconnect();
+      } catch (error) {
+        logger.warn('[shutdownMcpTools] Falha ao desconectar MCP:', error);
+      }
+    }),
+  );
 }

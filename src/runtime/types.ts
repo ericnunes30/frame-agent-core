@@ -110,4 +110,6 @@ export interface FrameRuntime {
     state: IGraphState;
     userInput?: Message;
   }): Promise<FrameRunResult>;
+
+  shutdown(): Promise<void>;
 }

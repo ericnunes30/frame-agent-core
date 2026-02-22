@@ -21,3 +21,4 @@ export { createListDirectoryTool } from './list-directory';
 export { createReadImageTool } from './read-image';
 export { createFileOutlineTool } from './file-outline';
 export { createListCapabilitiesTool, createEnableCapabilityTool } from './capabilities';
+export { createTimeNowTool } from './time-now';

@@ -2,7 +2,7 @@ import * as fs from 'fs';
 import { resolve } from 'path';
 import type { IGraphState, Message } from '@ericnunes/frame-agent-sdk';
 import { AgentRegistry } from '../agents';
-import { initializeTools } from '../tools/registry/ToolInitializer';
+import { initializeTools, shutdownTools } from '../tools/registry/ToolInitializer';
 import { logger } from '../infrastructure/logging/logger';
 import { resolveSessionTelemetryContext } from '../infrastructure/telemetry/sessionContext';
 import type { FrameRuntime, FrameRuntimeOptions, FrameRunResult, RuntimeTelemetryConfig } from './types';
@@ -124,6 +124,11 @@ export async function createFrameRuntime(options: FrameRuntimeOptions): Promise<
     return { ...result, runId: runId ?? '', agentId: args.agentId };
   }
 
+  async function shutdown(): Promise<void> {
+    runs.clear();
+    await shutdownTools();
+  }
+
   return {
     listAgents: () => registry.listSummaries(),
     getAgentMetadata: (agentId: string) => registry.getMetadata(agentId),
@@ -132,5 +137,6 @@ export async function createFrameRuntime(options: FrameRuntimeOptions): Promise<
     run,
     resume,
     resumeFromState,
+    shutdown,
   };
 }

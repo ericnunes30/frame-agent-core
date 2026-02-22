@@ -11,7 +11,7 @@ import { resolve } from 'path';
 
 import type { RuntimeProfile } from '../../runtime/types';
 import { logger } from '../../infrastructure/logging/logger';
-import { registerMcpTools, type McpAliasMode } from '../mcp/register';
+import { registerMcpTools, shutdownMcpTools, type McpAliasMode } from '../mcp/register';
 import {
   fileCreateTool,
   fileEditTool,
@@ -25,6 +25,7 @@ import {
   createFileOutlineTool,
   createListCapabilitiesTool,
   createEnableCapabilityTool,
+  createTimeNowTool,
 } from '../native';
 import { filterTools, getToolFilterConfig } from './toolFilter';
 
@@ -87,6 +88,7 @@ export async function initializeTools(args: {
     fileReadTool,
     terminalTool,
     sleepTool,
+    createTimeNowTool(),
     createFileOutlineTool({ projectRoot }),
     createListCapabilitiesTool({
       projectRoot,
@@ -133,6 +135,12 @@ export async function initializeTools(args: {
 
   toolsInitializedForRoot = projectRoot;
   toolsInitialized = true;
+}
+
+export async function shutdownTools(): Promise<void> {
+  await shutdownMcpTools();
+  toolsInitialized = false;
+  toolsInitializedForRoot = undefined;
 }
 
 export { toolRegistry };

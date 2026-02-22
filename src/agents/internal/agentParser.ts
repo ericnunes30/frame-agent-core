@@ -3,6 +3,7 @@ import * as path from 'path';
 import {
   GraphEngine,
   createAgentNode,
+  createToolExecutorNode,
   FlowRegistryImpl,
   FlowRunnerImpl,
   CallFlowTool,
@@ -25,6 +26,7 @@ import { McpLoader } from '../../tools/mcp/loader';
 import { filterToolsByPolicy as applyToolPolicy } from '../../tools/registry/toolFilter';
 import type { FrameProjectLayout } from '../../runtime/layout';
 import type { RuntimeTelemetryConfig } from '../../runtime/types';
+import { canActAsMainAgent } from './agentRoleResolver';
 
 /**
  * Parseia arquivo .md do agente e retorna IAgentMetadata.
@@ -122,6 +124,7 @@ export function parseAgentFile(filePath: string): IAgentMetadata | null {
     const metadata: IAgentMetadata = {
       name: frontmatter.name,
       type: agentType,
+      allowDualRole: frontmatter.allowDualRole === true || frontmatter.allowDualRole === 'true',
       canBeSupervisor: frontmatter.canBeSupervisor === true || frontmatter.canBeSupervisor === 'true',
       description: frontmatter.description,
       keywords: frontmatter.keywords || [],
@@ -194,6 +197,7 @@ export function discoverAgents(args: { projectRoot: string; agentsDirs?: string[
 function filterSubAgents(allSubAgents: IAgentMetadata[], subAgentsConfig?: string[] | 'all', supervisorName?: string): IAgentMetadata[] {
   if (supervisorName) {
     return allSubAgents.filter((agent) => {
+      if (agent.name === supervisorName) return false;
       if (!agent.availableFor) return true;
       if (agent.availableFor === 'all') return true;
       return Array.isArray(agent.availableFor) ? agent.availableFor.includes(supervisorName) : false;
@@ -293,6 +297,17 @@ function buildAgentLlmConfig(args: {
   return llmConfigWithTelemetry;
 }
 
+function createExecuteNodeForAgent(args: { tools: ITool[]; toolPolicy?: IAgentMetadata['toolPolicy'] }) {
+  const hasToDoIstTool = args.tools.some((tool) => tool.name === 'toDoIst');
+  return createToolExecutorNode({
+    toolPolicy: args.toolPolicy,
+    todoPlanGuard: {
+      enabled: hasToDoIstTool,
+      minInitialPlanItems: 2,
+    },
+  });
+}
+
 function buildSystemPrompt(args: {
   projectRoot: string;
   metadata: IAgentMetadata;
@@ -315,6 +330,7 @@ function buildSystemPrompt(args: {
     rulesFile: args.layout?.rulesFile,
     rulesFallbackFile: args.layout?.rulesFallbackFile,
   });
+  
   if (args.metadata.useProjectRules !== false && projectRules.content && projectRules.source !== 'none') {
     const rulesSection = `## Rules Project\n\n${projectRules.content}\n\n---\n\n`;
     systemPrompt = systemPrompt + rulesSection;
@@ -364,7 +380,7 @@ function maybeAppendSubAgentListToPrompt(args: {
   registry?: AgentRegistryLike;
 }): string {
   if (!args.registry) return args.systemPrompt;
-  if (args.metadata.type !== 'main-agent' || !args.metadata.canBeSupervisor) return args.systemPrompt;
+  if (!canActAsMainAgent(args.metadata) || !args.metadata.canBeSupervisor) return args.systemPrompt;
 
   const allSubAgents = args.registry.listByType('sub-agent');
   const allowedSubAgents = filterSubAgents(allSubAgents, args.metadata.subAgents, args.metadata.name);
@@ -403,7 +419,7 @@ async function maybeConfigureCallFlowForSubAgents(args: {
   layout?: FrameProjectLayout;
 }): Promise<ITool[]> {
   if (args.skipSubAgents) return args.tools;
-  if (args.metadata.type !== 'main-agent') return args.tools;
+  if (!canActAsMainAgent(args.metadata)) return args.tools;
   if (!args.metadata.tools.includes('call_flow')) return args.tools;
   if (!args.registry) return args.tools;
 
@@ -418,9 +434,13 @@ async function maybeConfigureCallFlowForSubAgents(args: {
 
   for (const subAgent of allowedSubAgents) {
     try {
+      const effectiveSubAgent =
+        subAgent.type === 'main-agent'
+          ? { ...subAgent, type: 'sub-agent' as const, canBeSupervisor: false }
+          : subAgent;
       const result = await createAgentWithDefinition(
         { projectRoot: args.projectRoot, mcpConfigFile: args.mcpConfigFile, layout: args.layout },
-        subAgent,
+        effectiveSubAgent,
         args.telemetry
       );
 
@@ -494,7 +514,26 @@ async function createAgentWithDefinition(
   });
 
   const graphDefinition: GraphDefinition = { ...REACT_AGENT_FLOW, nodes: { ...REACT_AGENT_FLOW.nodes } };
+  graphDefinition.nodes.execute = createExecuteNodeForAgent({
+    tools: finalTools,
+    toolPolicy: metadata.toolPolicy,
+  });
 
+  // Concatena o AGENTS.md ao additionalInstructions se useProjectRules estiver habilitado
+  let finalAdditionalInstructions = metadata.additionalInstructions || '';
+  const projectRules = loadProjectRules.load(args.projectRoot, {
+    rulesFile: args.layout?.rulesFile,
+    rulesFallbackFile: args.layout?.rulesFallbackFile,
+  });
+  if (metadata.useProjectRules !== false && projectRules.content && projectRules.source !== 'none') {
+    const rulesSection = `## Rules Project\n\n${projectRules.content}\n\n---\n\n`;
+    if (finalAdditionalInstructions) {
+      finalAdditionalInstructions += '\n\n' + rulesSection;
+    } else {
+      finalAdditionalInstructions = rulesSection;
+    }
+  }
+  
   graphDefinition.nodes.agent = createAgentNode({
     llm: llmConfig,
     promptConfig: {
@@ -504,7 +543,7 @@ async function createAgentWithDefinition(
         goal: metadata.description,
         backstory: metadata.backstory || systemPrompt.substring(0, 500),
       },
-      additionalInstructions: metadata.additionalInstructions || systemPrompt,
+      additionalInstructions: finalAdditionalInstructions,
       tools: finalTools,
       toolPolicy: metadata.toolPolicy,
     },
@@ -592,7 +631,24 @@ export async function createAgentFromFlow(
   });
 
   const graphDefinition: GraphDefinition = { ...REACT_AGENT_FLOW, nodes: { ...REACT_AGENT_FLOW.nodes } };
+  graphDefinition.nodes.execute = createExecuteNodeForAgent({
+    tools: finalTools,
+    toolPolicy: metadata.toolPolicy,
+  });
 
+  // Concatena o AGENTS.md ao additionalInstructions se useProjectRules estiver habilitado
+  let finalAdditionalInstructions = metadata.additionalInstructions || '';
+  if (metadata.useProjectRules !== false && systemPrompt.includes('Rules Project')) {
+    const rulesSection = systemPrompt.match(/## Rules Project[\s\S]*?(?=---\n\n|$)/)?.[0];
+    if (rulesSection) {
+      if (finalAdditionalInstructions) {
+        finalAdditionalInstructions += '\n\n' + rulesSection;
+      } else {
+        finalAdditionalInstructions = rulesSection;
+      }
+    }
+  }
+  
   graphDefinition.nodes.agent = createAgentNode({
     llm: llmConfig,
     promptConfig: {
@@ -602,7 +658,7 @@ export async function createAgentFromFlow(
         goal: metadata.description,
         backstory: metadata.backstory || systemPrompt.substring(0, 500),
       },
-      additionalInstructions: metadata.additionalInstructions || systemPrompt,
+      additionalInstructions: finalAdditionalInstructions,
       tools: finalTools,
       toolPolicy: metadata.toolPolicy,
     },
